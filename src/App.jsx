@@ -24,18 +24,24 @@ const api = {
     });
     if (!res.ok) throw new Error("保存失敗");
   },
+  async delete(id) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?id=eq.${id}`, {
+      method: "DELETE",
+      headers: this.headers,
+    });
+    if (!res.ok) throw new Error("削除失敗");
+  },
 };
 
 // ===================== メンバー定義 =====================
 // ここの name を実際のお名前に変更してください
 const MEMBERS = [
-  { id: "m1", name: "渡辺 陽子", color: "#2d6a4f" },
-  { id: "m2", name: "吉見 浩太朗", color: "#1d4e89" },
-  { id: "m3", name: "小林 のり子", color: "#7b2d8b" },
-  { id: "m4", name: "三浦 嘉子", color: "#b8e71dff" },
-  { id: "m5", name: "三島 淑", color: "#d35400" },
-  { id: "m6", name: "渡辺 恵子", color: "#f81fffff" },
-  { id: "m7", name: "成田 篤紀", color: "#8a9ee9ff" },  
+  { id: "m1", name: "山本 太郎", color: "#2d6a4f" },
+  { id: "m2", name: "佐藤 花子", color: "#1d4e89" },
+  { id: "m3", name: "田中 一郎", color: "#7b2d8b" },
+  { id: "m4", name: "鈴木 美咲", color: "#c0392b" },
+  { id: "m5", name: "伊藤 健二", color: "#d35400" },
+  { id: "m6", name: "渡辺 さくら", color: "#1a6b5a" },
 ];
 
 function timeAgo(ts) {
@@ -55,7 +61,7 @@ const css = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --bg: #f5f4f0; --surface: #ffffff; --border: #e2ddd6;
-    --primary: #0aeb85ff; --primary-light: #e8f5ee;
+    --primary: #2d6a4f; --primary-light: #e8f5ee;
     --urgent: #c0392b; --urgent-light: #fdf0ee;
     --text: #1a1a1a; --text-sub: #6b6560;
     --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.08);
@@ -151,6 +157,15 @@ const css = `
   .error-banner { background: #fdf0ee; border: 1.5px solid var(--urgent); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: var(--urgent); }
   .refresh-btn { background: none; border: none; color: var(--text-sub); font-size: 13px; cursor: pointer; font-family: inherit; padding: 2px 6px; border-radius: 6px; transition: background 0.1s; }
   .refresh-btn:hover { background: var(--border); }
+  .delete-btn { width: 100%; padding: 14px; border-radius: 10px; background: none; border: 1.5px solid var(--urgent); color: var(--urgent); font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; transition: all 0.15s; margin-top: 8px; }
+  .delete-btn:hover { background: var(--urgent-light); }
+  .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; align-items: flex-end; justify-content: center; }
+  .confirm-box { background: white; border-radius: 16px 16px 0 0; padding: 24px 20px 36px; width: 100%; max-width: 480px; }
+  .confirm-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+  .confirm-sub { font-size: 14px; color: var(--text-sub); margin-bottom: 20px; }
+  .confirm-btns { display: flex; gap: 10px; }
+  .confirm-cancel { flex: 1; padding: 14px; border-radius: 10px; border: 1.5px solid var(--border); background: white; font-size: 15px; font-family: inherit; cursor: pointer; }
+  .confirm-ok { flex: 1; padding: 14px; border-radius: 10px; border: none; background: var(--urgent); color: white; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; }
 `;
 
 export default function App() {
@@ -169,6 +184,7 @@ export default function App() {
   const [tasks, setTasks] = useState([]);
   const [taskInput, setTaskInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -273,6 +289,19 @@ export default function App() {
     setTaskInput("");
   };
 
+  const deleteMsg = async () => {
+    try {
+      await api.delete(detailMsg.id);
+      setMessages((prev) => prev.filter((m) => m.id !== detailMsg.id));
+      setDetailMsg(null);
+      setConfirmDelete(false);
+      showToast("🗑️ 削除しました");
+    } catch {
+      showToast("❌ 削除に失敗しました");
+      setConfirmDelete(false);
+    }
+  };
+
   // ======= ユーザー選択 =======
   if (!currentUser) {
     return (
@@ -339,8 +368,25 @@ export default function App() {
                 </div>
               )}
             </div>
+            {detailMsg.fromId === currentUser.id && (
+              <button className="delete-btn" onClick={() => setConfirmDelete(true)}>
+                🗑️ このメッセージを削除する
+              </button>
+            )}
           </div>
         </div>
+        {confirmDelete && (
+          <div className="confirm-overlay" onClick={() => setConfirmDelete(false)}>
+            <div className="confirm-box" onClick={(e) => e.stopPropagation()}>
+              <div className="confirm-title">メッセージを削除しますか？</div>
+              <div className="confirm-sub">削除すると全員の画面から消えます。元に戻せません。</div>
+              <div className="confirm-btns">
+                <button className="confirm-cancel" onClick={() => setConfirmDelete(false)}>キャンセル</button>
+                <button className="confirm-ok" onClick={deleteMsg}>削除する</button>
+              </div>
+            </div>
+          </div>
+        )}
       </>
     );
   }
