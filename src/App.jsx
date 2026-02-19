@@ -36,12 +36,13 @@ const api = {
 // ===================== メンバー定義 =====================
 // ここの name を実際のお名前に変更してください
 const MEMBERS = [
-  { id: "m1", name: "山本 太郎", color: "#2d6a4f" },
-  { id: "m2", name: "佐藤 花子", color: "#1d4e89" },
-  { id: "m3", name: "田中 一郎", color: "#7b2d8b" },
-  { id: "m4", name: "鈴木 美咲", color: "#c0392b" },
-  { id: "m5", name: "伊藤 健二", color: "#d35400" },
-  { id: "m6", name: "渡辺 さくら", color: "#1a6b5a" },
+  { id: "m1", name: "渡辺 陽子", color: "#2d6a4f" },
+  { id: "m2", name: "吉見 浩太朗", color: "#1d4e89" },
+  { id: "m3", name: "小林 のり子", color: "#7b2d8b" },
+  { id: "m4", name: "三浦 嘉子", color: "#b8e71dff" },
+  { id: "m5", name: "三島 淑", color: "#d35400" },
+  { id: "m6", name: "渡辺 恵子", color: "#f81fffff" },
+  { id: "m7", name: "成田 篤紀", color: "#8a9ee9ff" },  
 ];
 
 function timeAgo(ts) {
@@ -61,7 +62,7 @@ const css = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --bg: #f5f4f0; --surface: #ffffff; --border: #e2ddd6;
-    --primary: #2d6a4f; --primary-light: #e8f5ee;
+    --primary: #0aeb85ff; --primary-light: #e8f5ee;
     --urgent: #c0392b; --urgent-light: #fdf0ee;
     --text: #1a1a1a; --text-sub: #6b6560;
     --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.08);
