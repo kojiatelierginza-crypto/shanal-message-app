@@ -1,0 +1,21 @@
+{
+  "name": "社内連絡板",
+  "short_name": "連絡板",
+  "description": "伝言・引き継ぎアプリ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#2d6a4f",
+  "theme_color": "#2d6a4f",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
