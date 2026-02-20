@@ -247,18 +247,6 @@ export default function App() {
     }
   };
 
-  const toggleTask = async (msgId, taskId) => {
-    const msg = messages.find((m) => m.id === msgId);
-    if (!msg) return;
-    const updated = { ...msg, tasks: msg.tasks.map((t) => t.id === taskId ? { ...t, done: !t.done } : t) };
-    try {
-      await api.upsert(updated);
-      setMessages((prev) => prev.map((m) => m.id === msgId ? updated : m));
-      setDetailMsg(updated);
-    } catch {
-      showToast("❌ 更新に失敗しました");
-    }
-  };
 
   const sendMsg = async () => {
     if (!body.trim() || sending) return;
@@ -478,9 +466,10 @@ export default function App() {
               )}
               {error && <div className="error-banner">⚠️ {error}</div>}
               <div className="filter-tabs">
-                {[["all","すべて"],["msg","📢 伝言"],["hand","🔄 引き継ぎ"]].map(([val, label]) => (
-                  <button key={val} className={`filter-tab ${categoryFilter === val ? "active" : ""}`} onClick={() => setCategoryFilter(val)}>{label}</button>
-                ))}
+                {[["all","すべて"],["msg","📢 伝言"],["hand","🔄 引き継ぎ"]].map(([val, label]) => {
+                  const activeClass = categoryFilter === val ? (val === "hand" ? "active-hand" : "active") : "";
+                  return <button key={val} className={`filter-tab ${activeClass}`} onClick={() => setCategoryFilter(val)}>{label}</button>;
+                })}
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                 <div className="section-title" style={{ marginBottom: 0 }}>受信メッセージ</div>
@@ -549,15 +538,15 @@ export default function App() {
                     <div className="msg-subject">{m.subject}</div>
                     <div className="msg-preview">{m.body}</div>
                     <div className="sent-to" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <span>{readCount > 0 ? `👁 ${readCount}名が既読` : "まだ読まれていません"}</span>
+                      <span>{readCount > 0 ? `👁既読${readCount}` : "まだ読まれていません"}</span>
                       {(() => {
                         const stamps = m.stamps || {};
                         const okCount = Object.values(stamps).filter(s => s === "ok").length;
                         const doneCount = Object.values(stamps).filter(s => s === "done").length;
                         return (
                           <>
-                            {okCount > 0 && <span className="stamp-pill stamp-pill-ok">👍×{okCount}</span>}
-                            {doneCount > 0 && <span className="stamp-pill stamp-pill-done">✅×{doneCount}</span>}
+                            {okCount > 0 && <span className="stamp-pill stamp-pill-ok">👍{okCount}</span>}
+                            {doneCount > 0 && <span className="stamp-pill stamp-pill-done">✅{doneCount}</span>}
                           </>
                         );
                       })()}
