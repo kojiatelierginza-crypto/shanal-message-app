@@ -182,10 +182,12 @@ export default function App() {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [priority, setPriority] = useState("normal");
+  const [category, setCategory] = useState("msg");
   const [tasks, setTasks] = useState([]);
   const [taskInput, setTaskInput] = useState("");
   const [sending, setSending] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('all');
 
   const showToast = (msg) => {
     setToast(msg);
@@ -220,6 +222,7 @@ export default function App() {
   const inbox = currentUser
     ? messages
         .filter((m) => (m.toId === "all" || m.toId === currentUser.id) && m.fromId !== currentUser.id)
+        .filter((m) => categoryFilter === 'all' || m.category === categoryFilter)
         .sort((a, b) => {
           const aU = !a.readBy.includes(currentUser.id);
           const bU = !b.readBy.includes(currentUser.id);
@@ -267,6 +270,7 @@ export default function App() {
       subject: subject.trim() || "（件名なし）",
       body: body.trim(),
       priority,
+      category,
       createdAt: Date.now(),
       readBy: [currentUser.id],
       stamps: {},
@@ -276,7 +280,7 @@ export default function App() {
       await api.upsert(newMsg);
       setMessages((prev) => [newMsg, ...prev]);
       setTab("inbox");
-      setSubject(""); setBody(""); setTo("all"); setPriority("normal"); setTasks([]);
+      setSubject(""); setBody(""); setTo("all"); setPriority("normal"); setCategory("msg"); setTasks([]);
       showToast("✅ 送信しました");
     } catch {
       showToast("❌ 送信に失敗しました。接続を確認してください。");
@@ -364,9 +368,10 @@ export default function App() {
         <div className="app">
           <div className="header">
             <button className="back-btn" onClick={() => setDetailMsg(null)}>← 戻る</button>
-            {detailMsg.priority === "urgent"
-              ? <span className="badge badge-urgent">⚡ 至急</span>
-              : <span style={{ fontSize: 13, opacity: 0.7 }}>通常</span>}
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              {detailMsg.category === "hand" ? <span className="badge-cat-hand">🔄 引き継ぎ</span> : <span className="badge-cat-msg">📢 伝言</span>}
+              {detailMsg.priority === "urgent" && <span className="badge badge-urgent">⚡ 至急</span>}
+            </div>
           </div>
           <div className="content detail">
             <div className="detail-card">
@@ -472,6 +477,11 @@ export default function App() {
                 <div className="unread-banner">🔔 未読が {unreadCount} 件あります</div>
               )}
               {error && <div className="error-banner">⚠️ {error}</div>}
+              <div className="filter-tabs">
+                {[["all","すべて"],["msg","📢 伝言"],["hand","🔄 引き継ぎ"]].map(([val, label]) => (
+                  <button key={val} className={`filter-tab ${categoryFilter === val ? "active" : ""}`} onClick={() => setCategoryFilter(val)}>{label}</button>
+                ))}
+              </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                 <div className="section-title" style={{ marginBottom: 0 }}>受信メッセージ</div>
                 <button className="refresh-btn" onClick={() => { setLoading(true); fetchMessages().finally(() => setLoading(false)); }}>
@@ -499,7 +509,10 @@ export default function App() {
                       {m.priority === "urgent" && <span className="badge badge-urgent">⚡ 至急</span>}
                       {isUnread && <span className="badge-unread" />}
                     </div>
-                    <div className="msg-subject">{m.subject}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                        <div className="msg-subject" style={{ margin: 0 }}>{m.subject}</div>
+                        {m.category === "hand" ? <span className="badge-cat-hand">🔄 引き継ぎ</span> : <span className="badge-cat-msg">📢 伝言</span>}
+                      </div>
                     <div className="msg-preview">{m.body}</div>
                     {m.tasks.length > 0 && (
                       <div className="task-count">📝 タスク {m.tasks.filter((t) => t.done).length}/{m.tasks.length} 完了</div>
@@ -536,15 +549,15 @@ export default function App() {
                     <div className="msg-subject">{m.subject}</div>
                     <div className="msg-preview">{m.body}</div>
                     <div className="sent-to" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <span>{readCount > 0 ? `👁 既読${readCount}` : "まだ読まれていません"}</span>
+                      <span>{readCount > 0 ? `👁 ${readCount}名が既読` : "まだ読まれていません"}</span>
                       {(() => {
                         const stamps = m.stamps || {};
                         const okCount = Object.values(stamps).filter(s => s === "ok").length;
                         const doneCount = Object.values(stamps).filter(s => s === "done").length;
                         return (
                           <>
-                            {okCount > 0 && <span className="stamp-pill stamp-pill-ok">👍{okCount}</span>}
-                            {doneCount > 0 && <span className="stamp-pill stamp-pill-done">✅{doneCount}</span>}
+                            {okCount > 0 && <span className="stamp-pill stamp-pill-ok">👍×{okCount}</span>}
+                            {doneCount > 0 && <span className="stamp-pill stamp-pill-done">✅×{doneCount}</span>}
                           </>
                         );
                       })()}
@@ -570,6 +583,13 @@ export default function App() {
                         {m.name.split(" ")[0]}
                       </button>
                     ))}
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">🗂️ カテゴリ</label>
+                  <div className="priority-row">
+                    <button className={`priority-btn ${category === "msg" ? "sel-normal" : ""}`} onClick={() => setCategory("msg")}>📢 伝言</button>
+                    <button className={`priority-btn ${category === "hand" ? "sel-normal" : ""}`} onClick={() => setCategory("hand")}>🔄 引き継ぎ</button>
                   </div>
                 </div>
                 <div className="form-group">
@@ -628,3 +648,4 @@ export default function App() {
     </>
   );
 }
+
