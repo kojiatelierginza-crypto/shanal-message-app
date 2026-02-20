@@ -269,6 +269,7 @@ export default function App() {
       priority,
       createdAt: Date.now(),
       readBy: [currentUser.id],
+      stamps: {},
       tasks: tasks.map((t, i) => ({ id: `t_${Date.now()}_${i}`, text: t, done: false })),
     };
     try {
@@ -303,6 +304,30 @@ export default function App() {
     }
   };
 
+
+  const stampMsg = async (msgId, stampType) => {
+    const msg = messages.find((m) => m.id === msgId);
+    if (!msg) return;
+    const current = (msg.stamps || {})[currentUser.id];
+    const newStamps = { ...(msg.stamps || {}) };
+    if (current === stampType) {
+      delete newStamps[currentUser.id]; // 同じスタンプで取り消し
+    } else {
+      newStamps[currentUser.id] = stampType;
+    }
+    // スタンプを押したら既読にもする
+    const newReadBy = msg.readBy.includes(currentUser.id)
+      ? msg.readBy
+      : [...msg.readBy, currentUser.id];
+    const updated = { ...msg, stamps: newStamps, readBy: newReadBy };
+    try {
+      await api.upsert(updated);
+      setMessages((prev) => prev.map((m) => m.id === msgId ? updated : m));
+      setDetailMsg(updated);
+    } catch {
+      showToast("❌ 更新に失敗しました");
+    }
+  };
   // ======= ユーザー選択 =======
   if (!currentUser) {
     return (
@@ -369,6 +394,38 @@ export default function App() {
                 </div>
               )}
             </div>
+            {detailMsg.fromId !== currentUser.id && (
+              <div className="stamp-row">
+                {[["ok","👍","了解"], ["done","✅","完了"]].map(([type, emoji, label]) => {
+                  const myStamp = (detailMsg.stamps || {})[currentUser.id];
+                  const isStamped = myStamp === type;
+                  return (
+                    <button
+                      key={type}
+                      className={`stamp-btn ${isStamped ? `stamped-${type}` : ""}`}
+                      onClick={() => stampMsg(detailMsg.id, type)}
+                    >
+                      {emoji}<span>{isStamped ? "取り消す" : label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {detailMsg.fromId === currentUser.id && Object.keys(detailMsg.stamps || {}).length > 0 && (
+              <div className="stamp-detail">
+                <div className="stamp-detail-title">スタンプの状況</div>
+                {Object.entries(detailMsg.stamps || {}).map(([uid, type]) => {
+                  const member = getMember(uid);
+                  return (
+                    <div key={uid} className="stamp-detail-row">
+                      <div className="avatar avatar-sm" style={{ background: member?.color }}>{getInitial(member?.name)}</div>
+                      <span>{member?.name}</span>
+                      <span>{type === "ok" ? "👍 了解" : "✅ 完了"}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             {detailMsg.fromId === currentUser.id && (
               <button className="delete-btn" onClick={() => setConfirmDelete(true)}>
                 🗑️ このメッセージを削除する
@@ -478,7 +535,20 @@ export default function App() {
                     </div>
                     <div className="msg-subject">{m.subject}</div>
                     <div className="msg-preview">{m.body}</div>
-                    <div className="sent-to">{readCount > 0 ? `✅ ${readCount}名が既読` : "まだ読まれていません"}</div>
+                    <div className="sent-to" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <span>{readCount > 0 ? `👁 ${readCount}名が既読` : "まだ読まれていません"}</span>
+                      {(() => {
+                        const stamps = m.stamps || {};
+                        const okCount = Object.values(stamps).filter(s => s === "ok").length;
+                        const doneCount = Object.values(stamps).filter(s => s === "done").length;
+                        return (
+                          <>
+                            {okCount > 0 && <span className="stamp-pill stamp-pill-ok">👍×{okCount}</span>}
+                            {doneCount > 0 && <span className="stamp-pill stamp-pill-done">✅×{doneCount}</span>}
+                          </>
+                        );
+                      })()}
+                    </div>
                   </div>
                 );
               })}
