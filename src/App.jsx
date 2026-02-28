@@ -36,12 +36,12 @@ const api = {
 // ===================== メンバー定義 =====================
 // ここの name を実際のお名前に変更してください
 const MEMBERS = [
-  { id: "m1", name: "渡辺 陽子", color: "#2d6a4f" },
+  { id: "m1", name: "陽子 渡辺", color: "#2d6a4f" },
   { id: "m2", name: "吉見 浩太朗", color: "#1d4e89" },
   { id: "m3", name: "小林 のり子", color: "#7b2d8b" },
   { id: "m4", name: "三浦 嘉子", color: "#b8e71dff" },
   { id: "m5", name: "三島 淑", color: "#d35400" },
-  { id: "m6", name: "渡辺 恵子", color: "#f81fffff" },
+  { id: "m6", name: "恵子 渡辺", color: "#f81fffff" },
   { id: "m7", name: "成田 篤紀", color: "#8a9ee9ff" },  
 ];
 
